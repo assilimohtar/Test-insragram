@@ -2,10 +2,12 @@ from flask import Flask, render_template, request
 import requests
 from bs4 import BeautifulSoup
 import json
+import instaloader
 
-app = Flask(__name__, template_folder='.')  # نخبر Flask أن القوالب في نفس المجلد
+app = Flask(__name__, template_folder='.')  # القوالب في نفس المجلد
 
-def get_followers(username):
+def get_followers_html(username):
+    """محاولة جلب عدد المتابعين عبر تحليل الـ HTML"""
     url = f'https://www.instagram.com/{username}/'
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
@@ -28,12 +30,34 @@ def get_followers(username):
         return None
     return None
 
+def get_followers_instaloader(username):
+    """محاولة جلب المتابعين باستخدام instaloader"""
+    L = instaloader.Instaloader()
+    try:
+        profile = instaloader.Profile.from_username(L.context, username)
+        return profile.followers
+    except Exception:
+        return None
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         username = request.form['username'].strip()
-        followers = get_followers(username)
-        return render_template('result.html', username=username, followers=followers)
+
+        # 1. محاولة عبر HTML
+        followers = get_followers_html(username)
+        if followers is not None:
+            return render_template('result.html', username=username, followers=followers)
+
+        # 2. محاولة عبر instaloader
+        followers = get_followers_instaloader(username)
+        if followers is not None:
+            return render_template('result.html', username=username, followers=followers)
+
+        # إذا فشلت كل الطرق
+        error_message = "لم نتمكن من جلب البيانات، يرجى التحقق من إسم المستخدم أو جرب مرة أخرى."
+        return render_template('index.html', error=error_message)
+
     return render_template('index.html')
 
 if __name__ == '__main__':
