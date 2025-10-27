@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>نتيجة</title>
+</head>
+<body>
+  <h1>المستخدم: {{ username }}</h1>
+  {% if followers is not none %}
+    <p>عدد المتابعين: {{ followers }}</p>
+  {% else %}
+    <p>لم أتمكن من جلب البيانات، تحقق من اسم المستخدم.</p>
+  {% endif %}
+  <a href="/">محاولة مرة أخرى</a>
+</body>
+</html>
